@@ -1,0 +1,285 @@
+﻿
+Roteiro de configuração do Hortonworks HDF para o Linux RedHat 7/Cent OS 7 usando Amabri 2.7.0 e HDF 3.3.x
+
+OBS 1: É importante sempre utilizar a versão mais atual do Ambari Server com a versão mais atual do HDF.
+
+
+1) Logar em todas as máquinas usando o usuário root e rodar em cada máquina a sequencia de passos de A a G
+
+	A)
+
+	ulimit -n -u
+	ulimit -n 32768
+	ulimit -u 65536
+
+
+	B)
+
+	vi /etc/security/limits.conf
+	root - nofile 32768
+	root - nproc 65536
+
+
+
+	C)
+
+	yum install ntp -y
+	vi /etc/ntp.conf
+
+	server 0.us.pool.ntp.org iburst
+	server 1.us.pool.ntp.org iburst
+	server 2.us.pool.ntp.org iburst
+	server 3.us.pool.ntp.org iburst
+
+	apertar "ESC" e digitar o comando :wq!
+
+	D)
+	systemctl start ntpd
+	systemctl status ntpd
+	ntpq -p
+
+	ntpdate -q 0.centos.pool.ntp.org
+
+	E)
+
+	vi /etc/sysconfig/network
+
+	#Master
+	NETWORKING=yes
+	HOSTNAME=nomecompleto FDQN do master
+
+	#Demais nodes
+	NETWORKING=yes
+	HOSTNAME=nomecompleto FDQN do master
+
+	F) Alterar em todas as máquinas o arquivo /etc/hosts adicionando os hostnames das máquinas do cluster, conforme exemplo abaixo
+		-> vi /etc/hosts
+		-> adicionar as linhas abaixo no arquivo /etc/hosts
+			"IP interno da máquina master" node-1.us-east1-b.c.cluster-hdf.internal master
+			"IP interno da máquina node-1" node-2.us-east1-b.c.cluster-hdf.internal node-1
+			"IP interno da máquina node-2" master.us-east1-b.c.cluster-hdf.internal node-2
+	
+	G) Alterar a propriedade umask para o usuário root
+		-> alterando a máscara -> umask 0022
+		-> verificando a máscara-> umask
+		-> adicionando a nova máscara ao arquivo /etc/profile -> echo umask 0022 >> /etc/profile
+	
+Continuar logado como usuário root nos demais passos.
+	
+2) desativar o firewalld ou iptables em todas as máquinas
+	-> systemctl stop firewalld
+	-> systemctl disable firewalld
+
+3) Atualizar o OpenSSH em todas as máquinas
+	-> yum -y install OpenSSH-server
+
+4) Na máquina master ou server, criar o arquivo de chave pública e privada dentro do diretório do usuário root.
+   -> cd /root
+   -> ssh-keygen rsa
+   -> apertar enter em todas as etapas.
+
+5) Ir no diretório /root/.ssh/ que foi criado dentro do diretório onde o comando ssh-keygen foi invocado e depois criar um arquivo chamado authorized_keys 
+com o valor da chave pública (.pub) gerado pelo comando ssh-keygen
+	-> cat id_rsa.pub >> authorized_keys
+
+6)Usar o comando copy para gerar o arquivo authorized_keys nos demais hosts.
+	-> ssh-copy-id -i /root/.ssh/id_rsa.pub root@node-1
+	-> digitar "yes" no próximo passo
+	-> digitar a senha do usuário "root" da máquina 'node-1'
+	-> repetir o processo para o "node-2"
+
+7) Copiar a chave id_rsa.pub da máquina master para os demais hosts.
+	-> scp /root/.ssh/id_rsa.pub root@node-1:/root/.ssh/
+	-> scp /root/.ssh/id_rsa.pub root@node-2:/root/.ssh/
+
+
+8) Conceder as seguintes permissões em todas as máquinas:
+	-> chmod 700 /root/.ssh/
+	-> chmod 600 /root/.ssh/authorized_keys
+
+9) Alterar o arquivo /etc/ssh/sshd_config do serviço ssh em todas as máquinas incluindo as seguintes propriedades abaixo
+	-> RSAAuthentication yes
+	-> PubkeyAuthentication yes
+	-> AuthorizedKeysFile  .ssh/authorized_keys
+	-> PermitRootLogin yes
+	
+10) Alterar o arquivo /etc/ssh/ssh_config
+	Em todas as máquinas
+	-> trocar a propriedade PasswordAuthentication para yes
+	-> trocar a propriedade GSSAPIAuthentication para no
+		
+11) Reiniciar o serviço OpenSSH
+		-> systemctl restart sshd
+		-> systemctl status sshd
+		
+12) Habilitar o SELinux para trabalhar em modo permissive. 
+	Basta apenas editar o arquivo /etc/selinux/config
+    ->vi /etc/selinux/config ->> setar a propriedade SELINUX=enable -> SELINUX=permissive
+
+13) Testar o acesso da máquina master aos demais hosts.
+	-> ssh root@node-1
+	-> depois, ssh root@node-2
+	OBS: usar o exit para sair das sessões SSH.
+
+14) Instalar o comando wget em todas as máquinas
+	-> yum install wget
+	
+15) Baixar o reposistório Ambari em todas as máquinas através do comando wget descrito abaixo
+	-> wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.3.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+	
+Os passos seguintes devem ser feitos apenas na máquina master ou server.
+	
+16) Instalar o ambari-server na máquina master
+	-> yum install ambari-server
+	-> selecionar "yes" (y) em todas as perguntas.
+
+17) Instalar o driver mysql JDBC.
+	-> yum -y install mysql-connector-java*
+	
+18) Atribuir a instalação do ambari-server o caminho do driver mysql JDBC.
+	-> chmod 644 /usr/share/java/mysql-connector-java.jar
+	-> ambari-setup --jdbc-db=mysql --jdbc-driver=/usr/share/java/mysql-connector-java
+	
+19) Instalar o MySQL para repositório do ambari server e dos demais serviços do ecossistema Apache Hadoop.
+	-> instalando o repositório MySQL - yum localinstall https://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm
+	-> instalando o MySQL - yum install mysql-community-server
+	-> iniciando o serviço do MySQL - systemctl start mysqld.service
+
+20) Reiniciar a senha do usuário root do MySQL através dos comandos abaixo
+	-> copiar a senha padrão do root no arquivo /var/log/mysqld.log/
+		-> grep 'A temporary password is generated for root@localhost' /var/log/mysqld.log/ | tail -l
+	-> executar o script abaixo para resetar a senha do root.
+		-> /usr/bin/mysql_secure_installation
+		-> colar a senha copiada quando for solicitado a senha atual do root.
+		-> fornecer a nova senha.
+		-> confirmar a nova senha.
+		
+21)Logar no MySQL com o comando abaixo.
+	-> mysql -u root -p
+	-> inserir a senha do usuário "root" redefinida no passo anterior.
+
+22) Após logar no MySQl, executar os seguintes comandos abaixo, lembrando sempre de terminar de digitar os comandos com ; (ponto e vírgula) no final:
+	-> criar os databases Schema Registry e Streamline
+		-> create database registry;
+		-> create database streamline;
+		-> create database druid DEFAULT CHARACTER SET utf8;
+		-> create database superset DEFAULT CHARACTER SET utf8;
+		
+	-> criar os usuários para os serviços Schema Registry e Streamline.
+		-> CREATE USER 'registry'@'%' IDENTIFIED BY 'colocar o password do usuário registry aqui.'; --você pode colocar a senha que quiser
+		-> CREATE USER 'streamline'@'%' IDENTIFIED BY 'colocar o password do usuário streamline aqui.'; --você pode colocar a senha que quiser		
+		-> CREATE USER 'druid'@'%' IDENTIFIED BY 'colocar o password do usuário registry aqui.'; --você pode colocar a senha que quiser
+		-> CREATE USER 'superset'@'%' IDENTIFIED BY 'colocar o password do usuário registry aqui.'; --você pode colocar a senha que quiser
+		
+	-> criar um outro usuário para execução com permissões do root e que possa acessar o MySQL remotamente atravé do MySQL WorkBench por exemplo
+		-> CERATE USER 'pedd580'@'%' IDENTIFIED BY 'senha do usuário';
+		-> GRANT ALL PRIVILEGES ON *.* TO 'pedd580'@'%' WITH GRANT OPTION;
+		-> GRANT ALL PRIVILEGES ON *.* TO 'pedd580'@'localhost' WITH GRANT OPTION;
+	
+	-> conceder as seguintes permissões
+		-> GRANT ALL PRIVILEGES ON registry.* TO 'registry'@'%' WITH GRANT OPTION;
+		-> GRANT ALL PRIVILEGES ON streamline.* TO 'streamline'@'%' WITH GRANT OPTION;
+		-> GRANT ALL PRIVILEGES ON *.* TO 'druid'@'%' WITH GRANT OPTION;
+		-> GRANT ALL PRIVILEGES ON *.* TO 'superset'@'%' WITH GRANT OPTION;
+		
+	-> Salvar as modificações no disco.
+		-> FLUSH PRIVILEGES;
+		-> commit;
+			
+23) Configurar o banco de dados de repositório do ambari-server conforme script disponível no diretório abaixo através do usuário root do banco:
+	-> logar no MySQL usando o usuário "root" ou outro usuário como o "pedd580" com ALL PRIVILEGES
+	-> executar no MySQL o script /var/lib/ambari-server/resources/Ambari-DDL-MySQL-CREATE.sql, substituindo a senha do usuário ambari por uma de sua escolha.
+        -> conceder as seguintes permissões para o usuário ambari criado pelo script acima.
+		->  GRANT ALL PRIVILEGES ON *.* TO 'ambari'@'%' WITH GRANT OPTION;
+		->  GRANT ALL PRIVILEGES ON *.* TO 'ambari'@'localhost' WITH GRANT OPTION;
+		->  FLUSH PRIVILEGES;
+		->  commit;
+
+
+24) Configurar o Ambari para se conectar ao banco de dados criado no passo 23.
+	-> iniciar o setup do ambari -> ambari-server setup
+	-> Aceitar as licenças impostas na configuração do ambari-server setup e aceitar a instalação do Java JDK-Oracle.
+	-> Na pergunta "Enter advanced database configuration", digitar "y"
+	-> Escolher a opção "3 - MySQL" - as respostas abaixo serão solicitadas durante a configuração do banco de dados MySQL pelo Ambari.
+		-> informar o host do banco de dados MySQL, no exemplo apresentado é "localhost"
+		-> informar a porta "3306" do serviço MySQL
+		-> informar "ambari" para o Database (schema), aquela criada no passo 23 através do script disponível no caminho /var/lib/ambari-server/resources/Ambari-DDL-MySQL-CREATE.sql
+		-> informar "ambari" para o usuário do Database ambari
+		-> informar a senha atribuída para o usuário "ambari", a mesma definida na criação do usuário (passo 23) no script de caminho /var/lib/ambari-server/resources/Ambari-DDL-MySQL-CREATE.sql
+		-> digitar "y" para a pergunta final "Proceed with configuring remote database connection properties [y/n]"
+
+25) Após ter instalado o MySQL e configurado o Ambari Server para usar o MySQL como repositório, 
+	é necessário adicionar o pacote HDF-MPack Management 3.3.0 ao Ambari Server.
+	
+	-> Fazer um backup do diretório "resources" do Ambari
+		-> cp -r /var/lib/ambari-server/resources /var/lib/ambari-server/resources.backup
+		
+	-> Fazer o download do  HDF MPack Management através do repositório Hortonworks.
+		-> criar um diretório para salvar os arquivos de instalação.
+			-> mkdir /instalacoes/
+		-> baixar o arquivo .rpm
+			-> cd /instalacoes/
+			-> wget http://public-repo-1.hortonworks.com/HDF/centos7/3.x/updates/3.3.0.0/tars/hdf_ambari_mp/hdf-ambari-mpack-3.3.0.0-165.tar.gz
+		-> adicionar o HDF MPack Management ao Ambari Server
+			-> copiar o arquivo para o diretório /tmp/ -> cp /instalacoes/hdf-ambari-mpack-3.3.0.0-165.tar.gz /tmp/
+			-> adicionar o HDF MPack -> ambari-server install-mpack --mpack=/tmp/hdf-ambari-mpack-3.3.0.0-165.tar.gz --purge --verbose
+			-> digitar "yes" em todas as etapas.
+			
+
+26) Iniciar o Ambari Server.
+	-> ambari-server start
+	-> O ambari server vai rodar no endereço http://localhost:8080 com o usuário admin, senha admin
+
+27) Apesar do JAVA já ter sido instalado pelo Ambari, é recomedável configurar as variáveis de ambiente através da criação do arquivo /etc/profile.d/javahome.sh com o seguinte conteúdo:
+	-> vi /etc/profile.d/javahome.sh
+	-> adicionar as linhas abaixo no arquivo javahome.sh criado.
+	
+	export JRE_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/jre
+	export PATH=$PATH:$JRE_HOME/bin
+
+	export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64
+	export JAVA_PATH=$JAVA_HOME
+	export PATH=$PATH:$JAVA_HOME/bin
+	
+	OBS 1: os caminhos acima podem variar.
+		
+	-> reiniciar a máquina server.
+	-> digitar o comando echo $variável para ver se a configuração do passo 27 deu certo.
+	
+28) Após isso, entrar no seu navegador de preferência e digitar o endereço do ambari-server na porta 8080 e usar as credenciais apresentadas 
+no passo 26. Ex: http://<ip da máquina master ou server>:8080
+
+29) Copiar o arquivo id_rsa (sem extensão) da chave privada do ssh definido no passo 5 e salvá-lo em um local que pode ser aberto 
+	pelo navegador web posteriormente.
+	-> localização do arquivo: cd /root/.ssh/
+		
+30) Após logar no Ambari Server via navegador web, clicar no botão "Launch Wizard" e seguir o passo a passo para o deploy do cluster, 
+escolhendo a opção de configurar a conexão SSH.
+
+31) Não é necessário configurar o Ambari Agent nas demais máquinas, node-1 e node-2, pois escolhendo a forma de instalação dita no passo 30, o próprio Ambari Server 
+irá instalar e configurar isso nas demais máquinas.
+
+OBS: Foram usadas máquinas no ambiente de cloud Google Cloud.
+OBS: Os usuários abaixo foram usados no exemplo do passo a passo descrito acima.
+
+MySQL local para repositório ambari e demais serviços-> 
+	->usuário administrador do Banco: root
+	->senha: Axxiom_2019
+
+	->usuário do schema "ambari" no MySQL: ambari
+	->senha: Axxiom_2019
+
+	->usuario para acesso remoto do banco: pedd580
+	->senha: Axxiom_2019
+	
+	->usuário do schema "registry" no MySQL: registry
+	->senha: Axxiom_2019
+	
+	->usuário do schema "streamline" no MySQL: streamline
+	->senha: Axxiom_2019
+	
+	->usuário do schema "druid" no MySQL: druid
+	->senha: Axxiom_2019
+	
+	->usuário do schema "superset" no MySQL: superset
+	->senha: Axxiom_2019
