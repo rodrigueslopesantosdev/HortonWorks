@@ -1,0 +1,17 @@
+1) Salvar o arquivo .xls como .csv.
+2) Salvar o arquivo no diretório /home/hdfs - essa é a home unix do usuário 'hdfs' no unix.
+3) Realizar o upload do arquivo no diretório unix para dentro do diretório HDFS.
+
+sudo -u hdfs hdfs dfs -put <caminho-arquivo-no-unix> <diretorio-hdfs>
+
+4) Carregar o arquivo disponível no <diretorio-hdfs> para uma tabela externa HIVE.
+
+LOAD DATA INPATH 'hdfs:<diretorio-hdfs>' INTO TABLE <SCHEMA_TABELA>.<NOME_TABELA_EXTERNA_HIVE>;
+
+5) Carregar o conteúdo da tabela externa Hive para dentro de uma tabela managed ORC Hive.
+
+INSERT INTO <SCHEMA_TABELA>.<NOME_TABELA_MANAGED_ORC_HIVE> SELECT <CAMPOS> FROM <SCHEMA_TABELA>.<NOME_TABELA_EXTERNA_HIVE>;
+
+6) Deletar as tabelas externas Hive.
+
+DROP TABLE <SCHEMA_TABELA>.<NOME_TABELA_EXTERNA_HIVE>;

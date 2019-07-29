@@ -1,0 +1,158 @@
+﻿#LOGAR COMO USUARIO root no UNIX
+#todos os scripts e bases já necessários estão disponíveis no caminho /home/hive da máquina HDP.
+
+1) Copiar os arquivos .csv para a máquina UNIX
+
+2) Colocar os arquivos .csv no diretório UNIX /home/hdfs e no diretório /home/hive
+
+cp /home/tiago.santos/FATURA_PF.csv /home/hdfs/
+cp /home/tiago.santos/CLIENTE_PF.csv /home/hdfs/
+
+cp /home/tiago.santos/*.sql /home/hive/
+
+3) Colocar os arquivos .csv dentro do HDFS
+
+sudo -u hdfs hdfs dfs -put /home/hdfs/CLIENTE_PF.csv /zonas/zona_sistema_fonte/sistema_fonte/
+sudo -u hdfs hdfs dfs -put /home/hdfs/FATURA_PF.csv /zonas/zona_sistema_fonte/sistema_fonte/
+
+4) CRIAR AS TABELAS EXTERNAS E DATABASES
+
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -e "CREATE DATABASE POC_DB";
+sudo -u hive hive -e "CREATE DATABASE DW_REG";
+sudo -u hive hive -f CRIACAO_TABELA_EXTERNA_CLIENTE_PF_CSV.sql
+sudo -u hive hive -f CRIACAO_TABELA_EXTERNA_FATURA_PF_CSV.sql
+
+5) CARREGAR OS DADOS DO ARQUIVO .CSV NAS TABELAS EXTERNAS.
+
+sudo -u hive hive -e "LOAD DATA INPATH 'hdfs:/zonas/zona_sistema_fonte/sistema_fonte/FATURA_PF.csv' INTO TABLE POC_DB.FATURA_PF_CSV";
+
+sudo -u hive hive -e "LOAD DATA INPATH 'hdfs:/zonas/zona_sistema_fonte/sistema_fonte/CLIENTE_PF.csv' INTO TABLE POC_DB.CLIENTE_PF_CSV";
+
+7) CRIAR AS TABELAS MANAGED (Cliente_PF, FATURA_PF)
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CRIACAO_TABELA_MANAGED_CLIENTE_PF.sql
+sudo -u hive hive -f CRIACAO_TABELA_MANAGED_FATURA_PF.sql
+sudo -u hive hive -f CRIACAO_TABELA_MANAGED_CLIENTE_FATURA_PF.sql
+
+8) Insert into tabelas CLIENTE_PF e FATURA_PF
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f INSERT_INTO_FATURA_PF.sql
+sudo -u hive hive -f INSERT_INTO_CLIENTE_PF.sql
+
+9) CRIAR TABELA MANAGED CLIENTE_FATURA_PF
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CRIACAO_TABELA_MANAGED_CLIENTE_FATURA_PF.sql
+
+
+10) CRIAR OS OBJETOS DA DW_REG
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CRIACAO_OBJETOS_BASE_DW_REG.sql
+
+
+8) CARREGAR A TABELA DIM_ETNIA
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_ETNIA.sql
+
+
+9) CARREGAR A TABELA DIM_NACIONALIDADE
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_NACIONALIDADE.sql
+
+
+10) CARREGAR A TABELA DIM_NATURALIDADE
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_NATURALIDADE.sql
+
+
+11) CARREGAR A TABELA DIM_RELIGIAO
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_RELIGIAO.sql
+
+
+12) CARREGAR A TABELA DIM_UF 
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_UF.sql
+
+
+13) CARREGAR A TABELA DIM_CIDADE
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_CIDADE.sql
+
+
+14) CARREGAR A TABELA DIM_PERIODO
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_PERIODO.sql
+
+
+15) CARREGAR A TABELA DIM_CLIENTE
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_CLIENTE.sql
+
+
+16) CARREGAR A TABELA DIM_UNIDADE_CONSUMIDORA
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_DIM_UNIDADE_CONSUMIDORA.sql
+
+
+17) CARREGAR A TABELA FAT_PAGAMENTO_FATURA
+#Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
+
+cd /home/hive
+sudo -u hive hive -f CARGA_FAT_PAGAMENTO_FATURA.sql
+
+18) EXPORTANDO AS TABELAS DO DW PARA O HDFS
+#Logar no hive com o usuario hive usando os comandos abaixo
+sudo su hive
+hive
+
+Ao conectar no Hive digitar os comandos abaixo
+
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_CLIENTE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_CLIENTE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_CIDADE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_CIDADE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_ETNIA TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_ETNIA'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_NACIONALIDADE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_NACIONALIDADE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_NATURALIDADE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_NATURALIDADE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_PERIODO TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_PERIODO'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_RELIGIAO TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_RELIGIAO'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_UF TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_UF'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_UNIDADE_CONSUMIDORA TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_UNIDADE_CONSUMIDORA'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.FAT_PAGAMENTO_FATURA TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/FAT_PAGAMENTO_FATURA'";
+
+
+
+#Para deletar os arquivos das external table
+DROP TABLE POC_DB.CLIENTE_PF_CSV;
+DROP TABLE POC_DB.FATURA_PF_CSV;
+
+#depois de ter apagado as tabelas, apagar os diretórios conforme comando abaixo.
+sudo -u hdfs hdfs dfs -rmr /warehouse/tablespace/external/hive/poc_db.db/cliente_pf_csv
+sudo -u hdfs hdfs dfs -rmr /warehouse/tablespace/external/hive/poc_db.db/fatura_pf_csv
