@@ -1,0 +1,399 @@
+Vídeo: https://www.youtube.com/watch?v=XULEe277npk
+
+
+
+#####todos
+ulimit -n -u
+ulimit -n 32768
+ulimit -u 65536
+
+
+vi /etc/security/limits.conf
+root - nofile 32768
+root - nproc 65536
+
+#####todos
+ssh-keygen
+
+
+
+##name node
+vi  /etc/ssh/sshd_config
+PasswordAuthentication yes
+PermitRootLogin yes
+sudo systemctl restart sshd
+sudo passwd
+clvl1188
+
+####PASSO1
+
+#datanode
+ssh-copy-id 10.142.0.2
+https://docs.hortonworks.com/HDPDocuments/Ambari-2.2.0.0/bk_Installing_HDP_AMB/content/_set_up_password-less_ssh.html
+##Outra opção
+scp /root/.ssh/id_rsa 10.142.0.2:/root/
+
+####Outra possibilidade
+
+host1 ip:192.168.1.21
+
+host2 ip:192.168.1.22
+
+host3 ip:192.168.1.23
+
+on host1:
+
+rm -rf /root/.ssh
+ssh-keygen -t dsa
+cat /root/.ssh/id_dsa.pub >> /root/.ssh/authorized_keys
+scp /root/.ssh/id_dsa.pub host2:/root/
+scp /root/.ssh/id_dsa.pub host3:/root/
+
+on host2:
+
+rm -rf /root/.ssh
+ssh-keygen -t dsa
+cat /root/id_dsa.pub >> /root/.ssh/authorized_keys
+
+on host3:
+
+rm -rf /root/.ssh
+ssh-keygen -t dsa
+cat /root/id_dsa.pub >> /root/.ssh/authorized_keys
+
+
+
+
+####Passo 2
+
+#TODOS
+yum install ntp -y
+vi /etc/ntp.conf
+
+server 0.us.pool.ntp.org iburst
+server 1.us.pool.ntp.org iburst
+server 2.us.pool.ntp.org iburst
+server 3.us.pool.ntp.org iburst
+
+systemctl start ntpd
+systemctl status ntpd
+ntpq -p
+
+
+ntpdate -q 0.centos.pool.ntp.org
+
+
+
+###Passo3
+
+#Namenode
+hostname ambariserver.us-east1-b.c.hadoop-spark-desv.internal
+#Datanode cada
+hostname dnode1.us-east1-b.c.hadoop-spark-desv.internal
+hostname dnode2.us-east1-b.c.hadoop-spark-desv.internal
+
+
+
+#Todos
+vi /etc/hosts
+10.142.0.2 ambariserver.us-east1-b.c.hadoop-spark-desv.internal nnode
+10.142.0.3 dnode1.us-east1-b.c.hadoop-spark-desv.internal dnode1
+10.142.0.4 dnode2.us-east1-b.c.hadoop-spark-desv.internal dnode2
+
+
+#cada um
+
+vi /etc/sysconfig/network
+
+#Namenode
+NETWORKING=yes
+HOSTNAME=ambariserver.us-east1-b.c.hadoop-spark-desv.internal
+
+#Datanode
+NETWORKING=yes
+HOSTNAME=dnode1.us-east1-b.c.hadoop-spark-desv.internal
+
+NETWORKING=yes
+HOSTNAME=dnode2.us-east1-b.c.hadoop-spark-desv.internal
+
+
+###Passo 4 
+##Todos
+systemctl disable firewalld
+service firewalld stop
+getenforce
+setenforce 0
+getenforce
+
+
+
+###Passo 5
+
+##Installing Ambari
+##NameNode
+yum install wget
+
+wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.3.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+
+yum repolist
+
+yum install ambari-server
+
+yum makecache
+
+
+
+ambari-server setup
+####tudo default
+
+ambari-server start
+
+
+####Nos data nodes
+###install agent
+
+wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.3.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+
+yum install ambari-agent
+
+vi /etc/ambari-agent/conf/ambari-agent.ini
+                                        
+[server]
+hostname=ambariserver.us-east1-b.c.hadoop-spark-desv.internal
+url_port=4080
+secured_url_port=8443
+
+ ambari-agent start
+######https://community.hortonworks.com/questions/16281/install-ambari-agent-on-each-hosts.html
+
+
+
+###Passo 6 - Configuração
+##Acessar o ambariserver.us-east1-b.c.hadoop-spark-desv.internal:8080
+Admin
+Admin
+
+Senha do Admin
+projetoD580
+
+Vai para o ambiente
+
+###Possível erro de acesso SSH nas máquina
+################
+Web e adiciona cada chave de cada node1 e node2
+cat /root/.ssh/id_rsa
+
+
+
+ERRO no acesso ao usuário para o diretório do Ambari 
+
+https://community.hortonworks.com/questions/33127/i-cant-add-new-services-into-ambari.html
+
+cat /etc/ambari-server/conf/ambari.properties | grep ambari-server.user
+
+ chown -R <ambari-server-user> /var/run/ambari-server
+#####################
+
+
+####Antes ou durante a con~figuração
+
+
+###No Ambari-server
+####mariadb
+ yum install mariadb-server
+ systemctl start mariadb
+ systemctl enable mariadb
+
+USE mysql;
+UPDATE user SET password=PASSWORD('projetoD580') WHERE User='root' AND Host = 'localhost';
+FLUSH PRIVILEGES;
+
+
+CREATE USER 'root'@'ambariserver.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'projetoD580';
+
+CREATE USER 'root'@'dnode1.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'projetoD580';
+
+CREATE USER 'root'@'dnode2.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'projetoD580';
+
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'ambariserver.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'projetoD580' WITH GRANT OPTION;
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'dnode1.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'projetoD580' WITH GRANT OPTION;
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'dnode2.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'projetoD580' WITH GRANT OPTION;
+
+
+FLUSH PRIVILEGES;
+
+select user,host from mysql.user;
+
+#Name Node
+vi /etc/my.cnf.d/server.cnf
+bind-address=0.0.0.0
+
+systemctl restart mariadb
+
+
+
+
+####Nos DAta Nodes
+yum install mysql
+
+mysql -u root -h ambariserver.us-east1-b.c.hadoop-spark-desv.internal -p 
+
+
+yum install mysql-connector-java
+chmod 644 /usr/share/java/mysql-connector-java.jar
+ambari-server setup --jdbc-db=mysql --jdbc-driver=/usr/share/java/mysql-connector-java.jar
+
+
+
+#Name Node
+
+ Hive
+
+DROP USER hive@localhost;
+FLUSH PRIVILEGES;
+CREATE USER 'hive'@'localhost' IDENTIFIED BY 'projetoD580';
+GRANT ALL PRIVILEGES ON *.* TO 'hive'@'localhost' WITH GRANT OPTION;
+CREATE DATABASE hive;
+FLUSH PRIVILEGES;
+
+
+DROP USER oozie@localhost;
+FLUSH PRIVILEGES;
+CREATE USER 'oozie'@'localhost' IDENTIFIED BY 'projetoD580';
+GRANT ALL PRIVILEGES ON *.* TO 'oozie'@'localhost' WITH GRANT OPTION;
+CREATE DATABASE oozie;
+FLUSH PRIVILEGES;
+
+
+DROP USER superset@localhost;
+FLUSH PRIVILEGES;
+CREATE USER 'superset'@'localhost' IDENTIFIED BY 'projetoD580';
+GRANT ALL PRIVILEGES ON *.* TO 'superset'@'localhost' WITH GRANT OPTION;
+CREATE DATABASE superset;
+FLUSH PRIVILEGES;
+
+
+
+
+
+
+
+
+proxy
+
+gcloud auth login
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create dockerhdp --description=Docker --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:2222 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create streaminganalyticsmanager --description="Streaming Analytics Manager" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:7777 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create streamsmessagingmanager --description="Streams Messaging Manager" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8585 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create schemaregistry --description="Schema Registry" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:7788 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create stormlogviewer --description="Storm Logviewer" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8000 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create zeppelin2 --description="Zeppelin2" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:9996 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create nifiprotocol --description="NiFi Protocol" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:9088 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create nifiregistry --description="NiFi Registry" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:61080 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create ambariinfra --description="AmbariInfra" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8886 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create logsearch --description="Log Search" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:61888 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create hs2v2 --description="HS2v2" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:10500 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create spark --description="Spark" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:4040 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create ambarishell --description="AmbariShell" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:4200 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create solradmin --description="SolrAdmin" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8983 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create nfs --description="nfs" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:42111 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create hdfs --description="HDFS" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8020 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create nodemanager --description="nodemanager" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8040 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create rm --description="RM" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8032 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create knox --description="Knox" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8443 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create stormui --description="StormUI" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8744 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  splashpage --description=" Splash Page" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:1080 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  solr --description="Solr" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8993 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  hs2 --description="HS2" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:10000 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  hs2http --description="HS2Http" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:10001 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  hivejdbcjar --description="HiveJDBCJar" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:10002 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  das --description="DAS" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:30800 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  oozie --description="Oozie" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:11000 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  falcon --description="Falcon" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:15000 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  jobhistory --description="JobHistory" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:19888 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  webhdfs --description="WebHdfs" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:50070 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  datanode --description="Datanode" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:50075 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  accumulo --description="Accumulo" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:50095 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  webhcat --description="WebHcat" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:50111 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  hbasemaster --description="HBaseMaster" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:16010  --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  hbaseregion --description="HBaseRegion" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:16030 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  webhbase --description="WebHBase" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:60080  --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  xasecure --description="XASecure" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:6080 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  sparkhistoryserver --description="SparkHistoryServer" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:18080 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  nodemanager --description="NodeManager" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8042 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  atlas --description="Atlas" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:21000 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  jupyter --description="Jupyter" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8889 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  yarn --description="YARN" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8088 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  zookeeper --description="Zookeeper" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:2181 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  nifi --description="Nifi" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:9090 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  nifidistributedmapcacheserver --description="NiFi DistributedMapCacheServer" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:4557 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  stormnimbusthrift --description="Storm Nimbus Thrift" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:6627 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  hst --description="HST" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:9000 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create  kafka --description="Kafka" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:6667 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   nifiuihttps --description=" NiFi UI HTTPS" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:9091 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   sandboxssh2 --description=" Sandbox SSH 2" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:2202 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   yarnats --description="YarnATS" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8188 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   yarnatsr --description="YarnATSR" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8198 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   druid1 --description="Druid1" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:9089 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   druid2 --description="Druid2" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:8081 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   sshhdpcda --description="SSH HDP CDA" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:2201 --source-ranges=0.0.0.0/0
+
+gcloud compute --project=hadoop-spark-desv firewall-rules create   ranger --description="ranger" --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:6080 --source-ranges=0.0.0.0/0
