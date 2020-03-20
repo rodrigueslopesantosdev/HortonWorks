@@ -174,7 +174,7 @@ Admin
 Admin
 
 Senha do Admin
-projetoD580
+asdasdasdasdsa
 
 Vai para o ambiente
 
@@ -205,22 +205,22 @@ cat /etc/ambari-server/conf/ambari.properties | grep ambari-server.user
  systemctl enable mariadb
 
 USE mysql;
-UPDATE user SET password=PASSWORD('projetoD580') WHERE User='root' AND Host = 'localhost';
+UPDATE user SET password=PASSWORD('asdasdasdasdsa') WHERE User='root' AND Host = 'localhost';
 FLUSH PRIVILEGES;
 
 
-CREATE USER 'root'@'ambariserver.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'projetoD580';
+CREATE USER 'root'@'ambariserver.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'asdasdasdasdsa';
 
-CREATE USER 'root'@'dnode1.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'projetoD580';
+CREATE USER 'root'@'dnode1.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'asdasdasdasdsa';
 
-CREATE USER 'root'@'dnode2.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'projetoD580';
+CREATE USER 'root'@'dnode2.us-east1-b.c.hadoop-spark-desv.internal'  IDENTIFIED BY 'asdasdasdasdsa';
 
 
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'ambariserver.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'projetoD580' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'ambariserver.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'asdasdasdasdsa' WITH GRANT OPTION;
 
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'dnode1.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'projetoD580' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'dnode1.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'asdasdasdasdsa' WITH GRANT OPTION;
 
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'dnode2.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'projetoD580' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'dnode2.us-east1-b.c.hadoop-spark-desv.internal' IDENTIFIED BY 'asdasdasdasdsa' WITH GRANT OPTION;
 
 
 FLUSH PRIVILEGES;
@@ -254,7 +254,7 @@ ambari-server setup --jdbc-db=mysql --jdbc-driver=/usr/share/java/mysql-connecto
 
 DROP USER hive@localhost;
 FLUSH PRIVILEGES;
-CREATE USER 'hive'@'localhost' IDENTIFIED BY 'projetoD580';
+CREATE USER 'hive'@'localhost' IDENTIFIED BY 'asdasd';
 GRANT ALL PRIVILEGES ON *.* TO 'hive'@'localhost' WITH GRANT OPTION;
 CREATE DATABASE hive;
 FLUSH PRIVILEGES;
@@ -262,7 +262,7 @@ FLUSH PRIVILEGES;
 
 DROP USER oozie@localhost;
 FLUSH PRIVILEGES;
-CREATE USER 'oozie'@'localhost' IDENTIFIED BY 'projetoD580';
+CREATE USER 'oozie'@'localhost' IDENTIFIED BY 'asdasdasdasdsa';
 GRANT ALL PRIVILEGES ON *.* TO 'oozie'@'localhost' WITH GRANT OPTION;
 CREATE DATABASE oozie;
 FLUSH PRIVILEGES;
@@ -270,7 +270,7 @@ FLUSH PRIVILEGES;
 
 DROP USER superset@localhost;
 FLUSH PRIVILEGES;
-CREATE USER 'superset'@'localhost' IDENTIFIED BY 'projetoD580';
+CREATE USER 'superset'@'localhost' IDENTIFIED BY 'asdasdasdasdsa';
 GRANT ALL PRIVILEGES ON *.* TO 'superset'@'localhost' WITH GRANT OPTION;
 CREATE DATABASE superset;
 FLUSH PRIVILEGES;

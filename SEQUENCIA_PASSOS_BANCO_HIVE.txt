@@ -12,8 +12,8 @@ cp /home/tiago.santos/*.sql /home/hive/
 
 3) Colocar os arquivos .csv dentro do HDFS
 
-sudo -u hdfs hdfs dfs -put /home/hdfs/CLIENTE_PF.csv /zonas/zona_sistema_fonte/sistema_fonte/
-sudo -u hdfs hdfs dfs -put /home/hdfs/FATURA_PF.csv /zonas/zona_sistema_fonte/sistema_fonte/
+sudo -u hdfs hdfs dfs -put /home/hdfs/CLIENTE_PF.csv <path>/sistema_fonte/
+sudo -u hdfs hdfs dfs -put /home/hdfs/FATURA_PF.csv <path>/sistema_fonte/
 
 4) CRIAR AS TABELAS EXTERNAS E DATABASES
 
@@ -27,9 +27,9 @@ sudo -u hive hive -f CRIACAO_TABELA_EXTERNA_FATURA_PF_CSV.sql
 
 5) CARREGAR OS DADOS DO ARQUIVO .CSV NAS TABELAS EXTERNAS.
 
-sudo -u hive hive -e "LOAD DATA INPATH 'hdfs:/zonas/zona_sistema_fonte/sistema_fonte/FATURA_PF.csv' INTO TABLE POC_DB.FATURA_PF_CSV";
+sudo -u hive hive -e "LOAD DATA INPATH 'hdfs:/<path>/FATURA_PF.csv' INTO TABLE POC_DB.FATURA_PF_CSV";
 
-sudo -u hive hive -e "LOAD DATA INPATH 'hdfs:/zonas/zona_sistema_fonte/sistema_fonte/CLIENTE_PF.csv' INTO TABLE POC_DB.CLIENTE_PF_CSV";
+sudo -u hive hive -e "LOAD DATA INPATH 'hdfs:/<path>/CLIENTE_PF.csv' INTO TABLE POC_DB.CLIENTE_PF_CSV";
 
 7) CRIAR AS TABELAS MANAGED (Cliente_PF, FATURA_PF)
 #Usar o terminal UNIX logado como usuário root a partir do diretório /home/hive
@@ -136,16 +136,16 @@ hive
 
 Ao conectar no Hive digitar os comandos abaixo
 
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_CLIENTE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_CLIENTE'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_CIDADE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_CIDADE'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_ETNIA TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_ETNIA'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_NACIONALIDADE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_NACIONALIDADE'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_NATURALIDADE TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_NATURALIDADE'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_PERIODO TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_PERIODO'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_RELIGIAO TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_RELIGIAO'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_UF TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_UF'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_UNIDADE_CONSUMIDORA TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/DIM_UNIDADE_CONSUMIDORA'";
-sudo -u hive hive -e "EXPORT TABLE DW_REG.FAT_PAGAMENTO_FATURA TO 'hdfs:/zonas/zona_relacionada/201905/DW_REG/FAT_PAGAMENTO_FATURA'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_CLIENTE TO 'hdfs:/<path>/DW_REG/DIM_CLIENTE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_CIDADE TO 'hdfs:/<path>/DW_REG/DIM_CIDADE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_ETNIA TO 'hdfs:/<path>/DW_REG/DIM_ETNIA'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_NACIONALIDADE TO 'hdfs:/<path>/DW_REG/DIM_NACIONALIDADE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_NATURALIDADE TO 'hdfs:/<path>/DW_REG/DIM_NATURALIDADE'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_PERIODO TO 'hdfs:/<path>/DW_REG/DIM_PERIODO'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_RELIGIAO TO 'hdfs:/<path>/DW_REG/DIM_RELIGIAO'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_UF TO 'hdfs:/<path>/DW_REG/DIM_UF'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.DIM_UNIDADE_CONSUMIDORA TO 'hdfs:/<path>/DW_REG/DIM_UNIDADE_CONSUMIDORA'";
+sudo -u hive hive -e "EXPORT TABLE DW_REG.FAT_PAGAMENTO_FATURA TO 'hdfs:/<path>/DW_REG/FAT_PAGAMENTO_FATURA'";
 
 
 

@@ -264,22 +264,22 @@ OBS: Os usuários abaixo foram usados no exemplo do passo a passo descrito acima
 
 MySQL local para repositório ambari e demais serviços-> 
 	->usuário administrador do Banco: root
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019
 
 	->usuário do schema "ambari" no MySQL: ambari
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019
 
 	->usuario para acesso remoto do banco: pedd580
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019
 	
 	->usuário do schema "registry" no MySQL: registry
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019
 	
 	->usuário do schema "streamline" no MySQL: streamline
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019
 	
 	->usuário do schema "druid" no MySQL: druid
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019
 	
 	->usuário do schema "superset" no MySQL: superset
-	->senha: Axxiom_2019
+	->senha: asdfasdasd_2019

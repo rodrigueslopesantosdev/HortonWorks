@@ -27,8 +27,8 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY ';'
 LINES TERMINATED BY '\n'
 tblproperties ("skip.header.line.count"="1");
 
-LOAD DATA INPATH 'hdfs:/zonas/zona_crua/sistema_fonte/estruturado/teste/2019/20190430/PROPRIETARIO.csv' INTO TABLE TESTE.PROPRIETARIO;
+LOAD DATA INPATH 'hdfs:/<path>/PROPRIETARIO.csv' INTO TABLE TESTE.PROPRIETARIO;
 
-LOAD DATA INPATH 'hdfs:/zonas/zona_crua/sistema_fonte/estruturado/teste/2019/20190430/MODELO.csv' INTO TABLE TESTE.MODELO;
+LOAD DATA INPATH 'hdfs:/<path>/MODELO.csv' INTO TABLE TESTE.MODELO;
 
-LOAD DATA INPATH 'hdfs:/zonas/zona_crua/sistema_fonte/estruturado/teste/2019/20190430/FABRICANTE.csv' INTO TABLE TESTE.FABRICANTE;
+LOAD DATA INPATH 'hdfs:/<path>/FABRICANTE.csv' INTO TABLE TESTE.FABRICANTE;
